@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>خريطة السلامة المدرسية</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: full-bleed 3D model, floating top bar, side panel (bottom sheet on phones) */
+:root{
+  --bg:#eef6f6; --surface:#ffffff; --ink:#15302f; --muted:#5a7472; --line:#cfe3e2;
+  --accent:#139c9c; --accent-ink:#ffffff; --accent-soft:#d8f1f0;
+  --fire:#e5484d; --fire-deep:#9b1c1f; --co2:#2b2b2b; --meter:#f2a33a; --exit:#0f8a6a; --assembly:#3b6fd8; --staff:#7b4fd6; --teacher:#0b5f60;
+  --scene:#dfeeee; --ground:#cfe2df; --slab:#fbfdfd; --wall:#e9f4f4; --room:#c7ecea; --room-adm:#a3dcda; --room-svc:#f3f7f7; --room-haz:#fde8c8; --stair:#7fd0ce;
+  --font-display:'Tajawal',Tahoma,sans-serif; --font-body:'Tajawal',Tahoma,sans-serif;
+  --shadow:0 8px 28px rgba(16,60,60,.14);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1a1b; --surface:#132627; --ink:#e3f2f1; --muted:#93b0ae; --line:#24403f;
+  --accent:#2ec4c2; --accent-ink:#06201f; --accent-soft:#163b3b; --teacher:#8ee6e4;
+  --scene:#0d1d1e; --ground:#132a2a; --slab:#1b3334; --wall:#2a4747; --room:#1f4d4c; --room-adm:#2b6564; --room-svc:#233a3b; --room-haz:#4a3a22; --stair:#2a8a88;
+  --shadow:0 8px 28px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1a1b; --surface:#132627; --ink:#e3f2f1; --muted:#93b0ae; --line:#24403f;
+  --accent:#2ec4c2; --accent-ink:#06201f; --accent-soft:#163b3b; --teacher:#8ee6e4;
+  --scene:#0d1d1e; --ground:#132a2a; --slab:#1b3334; --wall:#2a4747; --room:#1f4d4c; --room-adm:#2b6564; --room-svc:#233a3b; --room-haz:#4a3a22; --stair:#2a8a88;
+  --shadow:0 8px 28px rgba(0,0,0,.4); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;direction:rtl;overflow:hidden}
+[hidden]{display:none!important}
+#app{position:relative;height:100%;width:100%}
+#stage{position:absolute;inset:0}
+#stage canvas{display:block;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;z-index:1}
+#labels > div{direction:ltr}
+.mk,.rl{direction:rtl;left:0;top:0}
+#alarm{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:0;transition:opacity .2s}
+#alarm.on{animation:flash 0.9s infinite}
+#alarm.fire{box-shadow:inset 0 0 120px 30px rgba(229,72,77,.55)}
+#alarm.air{box-shadow:inset 0 0 120px 30px rgba(59,111,216,.55)}
+@keyframes flash{0%,100%{opacity:0}50%{opacity:1}}
+.bar{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));left:max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;pointer-events:none;z-index:5}
+.brand{pointer-events:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.brand b{font-family:var(--font-display);font-weight:800;font-size:16px;line-height:1.2}
+.brand span{font-size:11.5px;color:var(--muted)}
+.seg{pointer-events:auto;display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;box-shadow:var(--shadow)}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 13px var(--font-body);padding:7px 12px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+button:focus-visible,.chip:focus-visible,.tab:focus-visible,.mk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{position:absolute;z-index:6;top:calc(84px + env(safe-area-inset-top,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));width:370px;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:6px;gap:4px;align-items:center}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);font:700 13px var(--font-body);padding:9px 4px;border-radius:10px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--ink)}
+.grip{display:none;border:0;background:transparent;color:var(--muted);font-size:18px;padding:4px 8px;cursor:pointer}
+.pane{overflow-y:auto;padding:14px 16px 18px;display:flex;flex-direction:column;gap:14px;flex:1;min-height:0}
+.pane > *{flex-shrink:0}
+.pane h3{margin:0;font:800 15px var(--font-display);text-wrap:balance}
+.pane p{margin:0;color:var(--muted);line-height:1.7}
+.sec{display:flex;flex-direction:column;gap:8px}
+.label{font-size:11.5px;letter-spacing:.02em;color:var(--muted);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 11px;font:500 12.5px var(--font-body);cursor:pointer}
+.chip[aria-pressed="false"]{opacity:.45}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:none}
+.sq{border-radius:3px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--bg);min-width:0}
+.stat b{display:block;font:800 20px var(--font-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);font:700 13px var(--font-body);padding:10px 12px;border-radius:12px;cursor:pointer;text-align:center}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{background:var(--fire);border-color:var(--fire);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1;min-width:0}
+.scen{display:grid;grid-template-columns:1fr;gap:8px}
+.scen button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:10px 12px;text-align:right;cursor:pointer;font-family:var(--font-body);display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+.scen button b{display:block;font-size:14px}
+.scen button span{font-size:11.5px;color:var(--muted);line-height:1.5}
+.scen button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.scen i{width:12px;height:36px;border-radius:6px}
+.progress{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.progress div{height:100%;width:0;background:var(--accent);transition:width .2s}
+.phases{display:flex;gap:4px}
+.phases span{flex:1;text-align:center;font-size:11px;padding:5px 2px;border-radius:8px;background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.phases span.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.phases span.done{background:var(--accent-soft);color:var(--ink)}
+.log{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.log > div{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:7px 10px;border-top:1px solid var(--line);font-size:12.5px;opacity:.35}
+.log > div:first-child{border-top:0}
+.log > div.on{opacity:1}
+.log > div.now{background:var(--accent-soft)}
+.log time{font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted)}
+.log small{display:block;color:var(--muted)}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.list > div{display:flex;gap:8px;align-items:center;padding:7px 10px;border-top:1px solid var(--line);font-size:12.5px}
+.list > div:first-child{border-top:0}
+.list .n{font-weight:800;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+.team > div{cursor:pointer;align-items:flex-start}
+.team b{display:block;font-size:13px}
+.team small{color:var(--muted);font-size:12px;line-height:1.5}
+.list .t{color:var(--muted);margin-inline-start:auto;font-size:11.5px;white-space:nowrap}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px}
+.toggle input{accent-color:var(--accent);width:18px;height:18px}
+input[type=range]{accent-color:var(--accent);width:100%}
+.info{position:absolute;z-index:7;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:300px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.info .close{position:absolute;top:8px;left:10px;border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer}
+.info h4{margin:0;font:800 15px var(--font-display);padding-left:20px}
+.info p{margin:0;color:var(--muted);line-height:1.6;font-size:13px}
+.mk{pointer-events:auto;cursor:pointer;min-width:22px;height:22px;padding:0 4px;border-radius:11px;display:flex;align-items:center;justify-content:center;font:800 11px var(--font-body);color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.mk.l{min-width:26px;height:26px;border-radius:13px}
+.mk.sqr{border-radius:6px}
+.mk.wide{padding:0 8px;font-size:11px;white-space:nowrap}
+.mk.hot{animation:pulse 1s infinite;box-shadow:0 0 0 5px rgba(229,72,77,.4)}
+.rl{font:700 11px var(--font-body);color:var(--ink);white-space:nowrap;background:var(--surface);border:1px solid var(--line);padding:1px 7px;border-radius:7px;opacity:.92}
+.rl.cls{font-weight:800}
+.tag{font:700 10.5px var(--font-body);color:#fff;background:var(--staff);padding:2px 7px;border-radius:7px;white-space:nowrap;left:0;top:0;direction:rtl}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+.hint{position:absolute;z-index:6;top:calc(84px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));background:var(--fire);color:#fff;font-weight:700;padding:8px 14px;border-radius:12px;box-shadow:var(--shadow)}
+.banner{position:absolute;z-index:6;top:calc(84px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px 14px;display:flex;flex-direction:column;gap:2px;max-width:320px}
+.banner b{font:800 15px var(--font-display)}
+.banner span{font-size:12.5px;color:var(--muted)}
+/* extinguisher trainer */
+.trainer{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--bg)}
+.trainer svg{display:block;width:100%;height:auto}
+.tctl{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.tmsg{font-size:13px;font-weight:700;min-height:20px}
+.tmsg.ok{color:var(--exit)} .tmsg.bad{color:var(--fire)}
+.hold{user-select:none;-webkit-user-select:none;touch-action:none}
+.hold.active{background:var(--fire);border-color:var(--fire);color:#fff}
+.checks{display:flex;gap:4px}
+.checks span{flex:1;text-align:center;font-size:11px;padding:4px 2px;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
+.checks span.done{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.types{display:grid;grid-template-columns:1fr;gap:8px}
+.type{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.type span{color:var(--muted);font-size:12.5px;line-height:1.6}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.num{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.num b{display:block;font:800 22px var(--font-display);font-variant-numeric:tabular-nums;direction:ltr}
+.num span{font-size:11.5px;color:var(--muted)}
+@media (max-width:760px){
+  .panel{top:auto;left:0;right:0;width:auto;bottom:0;height:44%;border-radius:18px 18px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .panel .pane{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .panel.min{height:calc(54px + env(safe-area-inset-bottom,0px))}
+  .panel.min .pane{display:none}
+  .grip{display:block}
+  .info{left:max(16px,env(safe-area-inset-left,0px));width:auto;bottom:calc(44% + 10px)}
+  .panel.min ~ .info{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  .hint,.banner{top:auto;bottom:calc(44% + 10px);left:max(16px,env(safe-area-inset-left,0px));max-width:none}
+  .brand span{display:none}
+  .seg button{padding:7px 10px}
+}
+@media (prefers-reduced-motion: reduce){.mk.hot,#alarm.on{animation:none}}
+</style>
+</head>
+<body style="margin:0">
+
+<div id="app">
+  <div id="stage"></div>
+  <div id="labels"></div>
+  <div id="alarm"></div>
+
+  <div class="bar">
+    <div class="brand"><b>خريطة السلامة المدرسية</b><span>المتوسطة الأولى والثانية بالخبر · ١٤٤٨هـ</span></div>
+    <div class="seg" role="group" aria-label="الأدوار">
+      <button id="f-all" aria-pressed="false">الدوران</button>
+      <button id="f-0" aria-pressed="true">الأرضي</button>
+      <button id="f-1" aria-pressed="false">الأول</button>
+    </div>
+    <div class="seg" role="group" aria-label="العرض">
+      <button id="v-3d" aria-pressed="true">ثلاثي</button>
+      <button id="v-top" aria-pressed="false">من أعلى</button>
+    </div>
+  </div>
+
+  <aside class="panel" id="panel">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-map" aria-selected="true">الخريطة</button>
+      <button class="tab" role="tab" id="t-sim" aria-selected="false">المحاكاة</button>
+      <button class="tab" role="tab" id="t-how" aria-selected="false">تدريب الطفاية</button>
+      <button class="tab" role="tab" id="t-team" aria-selected="false">اللجنة</button>
+      <button class="grip" id="grip" aria-label="تصغير اللوحة">▾</button>
+    </div>
+
+    <section class="pane" id="p-map">
+      <div class="stats">
+        <div class="stat"><b>٣٣</b><span>طفاية حريق</span></div>
+        <div class="stat"><b>٣</b><span>مخارج و٢ درج</span></div>
+        <div class="stat"><b>٥</b><span>عدادات كهرباء</span></div>
+      </div>
+      <div class="sec">
+        <div class="label">إظهار على الخريطة</div>
+        <div class="chips" id="layers">
+          <button class="chip" data-layer="ext" aria-pressed="true"><i class="dot" style="background:var(--fire)"></i>الطفايات</button>
+          <button class="chip" data-layer="exit" aria-pressed="true"><i class="dot sq" style="background:var(--exit)"></i>المخارج والسلالم</button>
+          <button class="chip" data-layer="asm" aria-pressed="true"><i class="dot" style="background:var(--assembly)"></i>نقاط التجمع</button>
+          <button class="chip" data-layer="route" aria-pressed="true"><i class="dot" style="background:var(--accent)"></i>اتجاه الإخلاء</button>
+          <button class="chip" data-layer="meter" aria-pressed="false"><i class="dot" style="background:var(--meter)"></i>العدادات</button>
+          <button class="chip" data-layer="room" aria-pressed="true"><i class="dot sq" style="background:var(--room-adm)"></i>أسماء الغرف</button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="label">ألوان الغرف</div>
+        <div class="chips" style="pointer-events:none">
+          <span class="chip"><i class="dot sq" style="background:var(--room)"></i>فصول</span>
+          <span class="chip"><i class="dot sq" style="background:var(--room-adm)"></i>إدارية</span>
+          <span class="chip"><i class="dot sq" style="background:var(--room-haz)"></i>مختبر ومطبخ ومقصف</span>
+          <span class="chip"><i class="dot sq" style="background:var(--stair)"></i>سلالم</span>
+        </div>
+        <div class="chips" style="pointer-events:none">
+          <span class="chip"><i class="dot" style="background:var(--fire)"></i>بودرة صغيرة</span>
+          <span class="chip"><i class="dot" style="background:var(--fire-deep)"></i>بودرة كبيرة</span>
+          <span class="chip"><i class="dot" style="background:var(--co2)"></i>CO2</span>
+          <span class="chip"><i class="dot sq" style="background:var(--accent)"></i>صندوق خرطوم</span>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="label" id="ext-title">طفايات الحريق</div>
+        <div class="list" id="ext-list"></div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-sim" hidden>
+      <div class="sec">
+        <div class="label">اختاري الحالة</div>
+        <div class="scen" id="scen">
+          <button data-s="evac" aria-pressed="true"><i style="background:var(--accent)"></i><div><b>إخلاء بسبب حريق</b><span>خروج الجميع من المبنى إلى الساحة الخارجية</span></div></button>
+          <button data-s="lab" aria-pressed="false"><i style="background:var(--fire)"></i><div><b>حريق في المختبر</b><span>الدخان يغلق الدرج الشرقي، فتنزل كل فصول الدور الأول من الدرج الغربي</span></div></button>
+          <button data-s="air" aria-pressed="false"><i style="background:var(--assembly)"></i><div><b>تهديد جوي</b><span>أول قرب الدرج الشرقي، ثاني قرب الدرج الغربي، ثالث عند أبواب فصولها</span></div></button>
+        </div>
+      </div>
+      <div class="phases" id="phases"><span>الإنذار</span><span>الإخلاء</span><span>المسح</span><span>الحصر</span></div>
+      <div class="stats">
+        <div class="stat"><b id="st-time">٠:٠٠</b><span>الزمن الفعلي</span></div>
+        <div class="stat"><b id="st-safe">٠</b><span>طالبات بأمان</span></div>
+        <div class="stat"><b id="st-total">٥٠٠</b><span>المجموع</span></div>
+      </div>
+      <div class="progress"><div id="prog"></div></div>
+      <div class="row">
+        <button class="btn primary" id="sim-play">ابدئي المحاكاة</button>
+        <button class="btn" id="sim-reset">إعادة</button>
+      </div>
+      <div class="sec">
+        <label class="label" for="speed">سرعة العرض: <span id="speed-v">×٤</span></label>
+        <input type="range" id="speed" min="1" max="10" step="1" value="4">
+        <label class="toggle"><input type="checkbox" id="follow" checked>تحريك الكاميرا مع المحاكاة</label>
+        <label class="toggle"><input type="checkbox" id="sound">صوت جرس الإنذار</label>
+      </div>
+      <div class="sec">
+        <div class="label">سير الخطة</div>
+        <div class="log" id="log"></div>
+      </div>
+      <p>كل نقطة على الخريطة تمثل قرابة ٤ طالبات. الزمن محسوب بسرعة مشي هادئة (١٫٣ م/ث).</p>
+      <div class="sec">
+        <div class="label">موقع حريق افتراضي</div>
+        <p>اضغطي الزر ثم المسي أي مكان على الخريطة، وتظهر أقرب الطفايات وأقرب مخرج.</p>
+        <button class="btn danger" id="fire-pick">حددي مكان الحريق</button>
+        <div class="list" id="fire-list" hidden></div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-how" hidden>
+      <div class="sec">
+        <h3>جرّبي إطفاء الحريق</h3>
+        <p>طبّقي الخطوات بالترتيب: اسحبي المسمار، اختاري المسافة، وجّهي للقاعدة، ثم اضغطي مع التحريك.</p>
+      </div>
+      <div class="trainer">
+        <svg id="tsvg" viewBox="0 0 360 200" role="img" aria-label="تدريب على طفاية الحريق">
+          <rect x="0" y="160" width="360" height="40" fill="var(--line)"/>
+          <g id="tfire" transform="translate(290 160)">
+            <path class="fl" d="M-34 0 C-40 -30 -16 -36 -22 -70 C-2 -46 6 -30 0 0Z" fill="var(--meter)"/>
+            <path class="fl" d="M-8 0 C-14 -40 12 -50 6 -92 C30 -60 34 -30 26 0Z" fill="var(--fire)"/>
+            <path class="fl" d="M18 0 C14 -24 32 -30 28 -56 C46 -36 48 -18 42 0Z" fill="var(--meter)"/>
+            <rect x="-40" y="-4" width="86" height="8" rx="3" fill="var(--muted)"/>
+          </g>
+          <g id="text" transform="translate(70 160)">
+            <rect x="-14" y="-74" width="28" height="74" rx="10" fill="var(--fire)"/>
+            <rect x="-6" y="-86" width="12" height="14" fill="var(--muted)"/>
+            <path d="M-18 -92h34l-5 7h-24z" fill="var(--fire-deep)"/>
+            <g id="tpin" style="cursor:pointer"><circle cx="14" cy="-84" r="16" fill="#000" fill-opacity="0"/><circle cx="18" cy="-84" r="6" fill="none" stroke="var(--ink)" stroke-width="3"/><line x1="4" y1="-84" x2="12" y2="-84" stroke="var(--ink)" stroke-width="3"/></g>
+            <g id="tnoz"><path d="M8 -82 C36 -80 40 -60 52 -50" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/></g>
+            <rect x="-10" y="-50" width="20" height="16" rx="2" fill="#fff" opacity=".85"/>
+            <text x="0" y="-38" text-anchor="middle" font-size="8" font-weight="800" fill="var(--fire-deep)">ABC</text>
+          </g>
+          <g id="tspray"></g>
+          <text id="tdist" x="180" y="186" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)"></text>
+        </svg>
+        <div class="tctl">
+          <div class="checks" id="tchecks"><span>المسمار</span><span>المسافة</span><span>التوجيه</span><span>الضغط</span><span>التحريك</span></div>
+          <button class="btn" id="tpinbtn">اسحبي مسمار الأمان</button>
+          <div class="sec"><label class="label" for="tdistance">المسافة من النار: <span id="tdv">٦ م</span></label><input type="range" id="tdistance" min="1" max="6" step="0.5" value="6"></div>
+          <div class="row">
+            <button class="btn" id="taim-top">وجّهي لأعلى اللهب</button>
+            <button class="btn" id="taim-base">وجّهي لقاعدة النار</button>
+          </div>
+          <label class="toggle"><input type="checkbox" id="tsweep">حرّكي الفوهة يمينًا ويسارًا</label>
+          <button class="btn hold" id="thold">اضغطي المقبض باستمرار</button>
+          <div class="progress"><div id="tfirebar" style="width:100%;background:var(--fire)"></div></div>
+          <div class="tmsg" id="tmsg">ابدئي بسحب مسمار الأمان (المسي الحلقة على الطفاية).</div>
+          <button class="btn" id="treset">إعادة التدريب</button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="label">أنواع الطفايات في المدرسة</div>
+        <div class="types">
+          <div class="type"><i class="dot" style="background:var(--fire);margin-top:4px"></i><div><b>بودرة كيميائية جافة ABC</b><br><span>للورق والخشب والقماش والسوائل المشتعلة والغاز. ٣٢ طفاية في المبنى.</span></div></div>
+          <div class="type"><i class="dot" style="background:var(--co2);margin-top:4px"></i><div><b>ثاني أكسيد الكربون CO2</b><br><span>للأجهزة الكهربائية. واحدة في المختبر. لا تُمسك الفوهة البلاستيكية لأنها تبرد بشدة.</span></div></div>
+          <div class="type"><i class="dot sq" style="background:var(--accent);margin-top:4px"></i><div><b>صندوق خرطوم الحريق</b><br><span>عند الإدارة. لا يُستخدم الماء على حريق كهربائي.</span></div></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="label">أرقام الطوارئ</div>
+        <div class="nums">
+          <div class="num"><b>998</b><span>الدفاع المدني</span></div>
+          <div class="num"><b>911</b><span>الطوارئ</span></div>
+          <div class="num"><b>997</b><span>الهلال الأحمر</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-team" hidden>
+      <div class="sec">
+        <h3>لجنة الأمن والسلامة</h3>
+        <p>أدوار المنسوبات في الإخلاء والتهديد الجوي. اضغطي على أي اسم لإظهار مكان مهمتها على الخريطة.</p>
+      </div>
+      <div class="sec"><div class="label">القيادة والإشراف</div><div class="list team" id="team-lead"></div></div>
+      <div class="sec"><div class="label">مهام الطوارئ</div><div class="list team" id="team-roles"></div></div>
+      <div class="sec"><div class="label">التهديد الجوي · نقاط التجمع</div><div class="list team" id="team-air"></div></div>
+      <div class="sec"><div class="label">توزيع الفصول</div><div class="list team" id="team-cls"></div></div>
+      <div class="sec"><div class="label">الإشراف على الإخلاء حسب الأدوار</div><div class="list team" id="team-floors"></div></div>
+    </section>
+  </aside>
+
+  <div class="banner" id="banner" hidden><b id="banner-h"></b><span id="banner-p"></span></div>
+  <div class="info" id="info" hidden>
+    <button class="close" id="info-x" aria-label="إغلاق">×</button>
+    <h4 id="info-h"></h4>
+    <p id="info-p"></p>
+  </div>
+  <div class="hint" id="hint" hidden>المسي مكان الحريق على الخريطة</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+<script>
+(function(){
+const AR='٠١٢٣٤٥٦٧٨٩'; const ar=n=>String(n).replace(/\d/g,d=>AR[d]);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const col=v=>new THREE.Color(css(v)||'#888');
+const $=id=>document.getElementById(id);
+const FY=[0,7];            // floor elevations (m)
+const WALL=1.4, WT=0.14;   // wall height & thickness
+const P=(x,y,f,lift=0)=>new THREE.Vector3((x-300)/10, FY[f]+lift, (y-170)/10);
+
+/* ---------- plan data (school floor plan, plan px; 10px ≈ 1 m) ---------- */
+// floor,x,y,w,h,label,kind,doorSide(n/s/e/w)
+const ROOMS=[
+ [0,10,10,110,50,'دورة مياه','svc','s'],[0,120,10,70,50,'ثالث/٤ (١١)','cls','s'],[0,190,10,70,50,'ثالث/٥ (١٠)','cls','s'],
+ [0,400,10,190,60,'مصادر التعلم','adm','s'],[0,262,10,70,45,'الأرشيف (بنان عسيري)','adm','s'],[0,10,60,90,45,'درج غربي','stair',''],[0,10,105,90,25,'مستودع','svc','e'],
+ [0,10,130,90,63,'ثالث/٣ (١٤)','cls','e'],[0,10,193,90,63,'ثالث/٢ (١٥)','cls','e'],[0,10,256,90,64,'ثالث/١ (٣١)','cls','e'],
+ [0,330,95,65,55,'المقصف','haz','s'],[0,395,95,60,55,'تحضير المختبر','haz','s'],[0,455,95,135,55,'المختبر','haz','s'],
+ [0,500,155,90,30,'درج شرقي','stair',''],[0,340,195,70,50,'دورة مياه','svc','n'],[0,410,195,60,50,'مطبخ','haz','n'],
+ [0,470,195,120,50,'إدارة المدرسة','adm','n'],[0,470,250,120,70,'المكاتب الإدارية','adm','w'],
+ [0,130,280,95,45,'الصحة المدرسية','adm','n'],[0,225,280,100,45,'المساعد الإداري','adm','n'],
+ [1,10,10,100,50,'دورة مياه','svc','s'],[1,110,10,75,50,'ثاني/٢ (٢٧)','cls','s'],[1,185,10,75,50,'ثاني/٣ (٢٦)','cls','s'],
+ [1,260,10,75,50,'ثاني/٤ (٢٥)','cls','s'],[1,335,10,75,50,'ثاني/٥ (٢٤)','cls','s'],[1,410,10,180,95,'معمل الحاسب','adm','w'],
+ [1,290,110,60,45,'الوكيلة','adm','s'],[1,350,110,60,45,'الإرشاد','adm','s'],[1,410,110,180,45,'المقصف المدرسي','haz','s'],
+ [1,10,60,90,50,'درج غربي','stair',''],[1,10,115,90,55,'ثاني/١ (٢٩)','cls','e'],[1,10,170,90,55,'أول/٥ (٣٠)','cls','e'],[1,10,225,90,55,'أول/٤ (٣١)','cls','e'],
+ [1,500,162,90,30,'درج شرقي','stair',''],[1,300,200,90,55,'دورة مياه','svc','n'],[1,390,200,45,55,'مطبخ','haz','n'],[1,435,200,155,70,'غرفة المعلمات','adm','n'],
+ [1,110,285,80,45,'أول/٣ (٣٢)','cls','n'],[1,190,285,80,45,'أول/٢ (٣٣)','cls','n'],[1,270,285,80,45,'أول/١ (٣٤)','cls','n'],
+ [1,350,285,60,45,'المراقبات','adm','n'],[1,410,285,180,45,'غرفة المعلمات','adm','n']
+];
+const EXT=[
+ [0,1,575,208,'s','غرفة المديرة'],[0,2,575,262,'s','غرفة سارة (المكاتب الإدارية)'],[0,3,575,285,'s','غرفة فاطمة (المكاتب الإدارية)'],
+ [0,4,575,308,'s','غرفة منيرة القحطاني (المكاتب الإدارية)'],[0,5,455,235,'s','مطبخ الإدارة'],[0,6,145,292,'s','غرفة الصحة'],
+ [0,7,240,292,'s','غرفة الإداريات'],[0,8,340,292,'s','المدخل الرئيسي'],[0,9,380,292,'s','المدخل الرئيسي'],
+ [0,10,470,107,'l','المختبر'],[0,11,500,107,'c','المختبر'],[0,12,367,66,'s','عند مخرج الطوارئ'],
+ [0,13,155,72,'l','عند ثالث/٤ (غرفة ١١)'],[0,14,65,72,'s','عند دورات المياه'],[0,15,180,268,'l','بجانب غرفة الصحة'],
+ [0,16,300,66,'s','عند الأرشيف (مكتب بنان عسيري)'],[0,17,180,72,'s','عند ثالث/٤ (غرفة ١١)'],[0,18,205,268,'s','بجانب غرفة الصحة'],
+ [1,1,398,320,'s','غرفة المراقبات'],[1,2,398,145,'s','غرفة الموجهة الطلابية'],[1,3,430,92,'s','غرفة النشاط (بجانب معمل الحاسب)'],
+ [1,4,580,22,'l','معمل الحاسب'],[1,5,372,72,'s','بجانب ثاني/٥ (غرفة ٢٤)'],[1,6,297,72,'l','بجانب غرفة ٢٥ (ثاني/٤)'],
+ [1,7,60,72,'s','بجانب دورات المياه'],[1,8,112,197,'s','بجانب أول/٥ (غرفة ٣٠)'],[1,9,230,273,'s','بجانب أول/٢ (غرفة ٣٣)'],
+ [1,10,300,145,'l','غرفة الوكيلة'],[1,11,575,212,'l','غرفة المعلمات (١)'],[1,12,575,297,'l','غرفة المعلمات (٢)'],
+ [1,13,412,247,'l','المطبخ'],[1,14,321,72,'s','بجانب غرفة ٢٥ (ثاني/٤)'],[1,15,255,273,'l','بجانب أول/٢ (غرفة ٣٣)']
+];
+const TYPE={s:['بودرة جافة ABC صغيرة','--fire'],l:['بودرة جافة ABC كبيرة','--fire-deep'],c:['ثاني أكسيد الكربون CO2','--co2']};
+const METERS=[[0,1,573,27,'داخل مصادر التعلم'],[0,2,573,112,'داخل المختبر'],[0,3,440,231,'داخل المطبخ (بجوار إدارة المدرسة)'],[1,4,412,92,'بقرب معمل الحاسب'],[1,5,412,240,'داخل المطبخ (بجوار غرفة المعلمات)']];
+const EXITS=[[0,360,304,'المدخل الرئيسي','المخرج الرئيسي للإخلاء، يؤدي إلى الساحة الخارجية.',true],
+ [0,450,332,'مخرج المكاتب الإدارية','مخرج طوارئ بجانب المكاتب الإدارية.',true],
+ [0,367,40,'مخرج مصادر التعلم','مخرج طوارئ بين الفصول ومصادر التعلم.',true],
+ [1,55,85,'الدرج الغربي','طريق نزول فصول الصف العلوي والعمود الغربي في الدور الأول.',false],
+ [1,545,177,'الدرج الشرقي','طريق نزول فصول الصف السفلي في الدور الأول.',false]];
+const ASM=[[0,455,176,'تجمع صفوف أول','تهديد جوي: صفوف أول تنزل وتتجمع في الدور الأرضي قرب الدرج الشرقي بجانب الإدارة.','in'],
+ [0,160,88,'تجمع صفوف ثاني','تهديد جوي: صفوف ثاني تنزل وتتجمع في الدور الأرضي قرب الدرج الغربي بجانب دورة المياه.','in'],
+ [0,135,224,'ثالث عند الأبواب','تهديد جوي: صفوف ثالث تبقى خارج فصولها عند الباب في الدور الأرضي.','in'],
+ [0,380,420,'الساحة الخارجية','نقطة التجمع الخارجية في حالة الإخلاء بسبب حريق.','out']];
+
+/* ---------- routes ---------- */
+const OUT_E=[[300,262,0],[360,304,0],[360,360,0],[380,420,0]];
+const WEST=[[112,86,1],[55,86,1],[55,86,0],[112,92,0]];
+function classRoutes(){
+  const C=[];
+  [155,225].forEach(x=>C.push({name:x===155?'ثالث/٤':'ثالث/٥',src:[x,35,0],evac:[[x,72,0],[x,140,0],...OUT_E],air:[[x,66,0],[x,80,0]],near:true}));
+  [[161,'ثالث/٣'],[224,'ثالث/٢'],[288,'ثالث/١']].forEach(([y,n])=>C.push({name:n,src:[55,y,0],evac:[[108,y,0],[150,y,0],...OUT_E],air:[[106,y,0],[122,y,0]],near:true}));
+  const EAST_DOWN=[[290,274,1],[290,182,1],[495,180,1],[545,177,1],[545,177,0],[495,177,0],[455,176,0]];
+  [[372,'ثاني/٥'],[297,'ثاني/٤'],[222,'ثاني/٣'],[147,'ثاني/٢']].forEach(([x,n])=>{const pre=[[x,76,1],...WEST];
+    C.push({name:n,src:[x,35,1],evac:[...pre,[200,150,0],...OUT_E],air:[...pre,[160,88,0]]});});
+  {const pre=[[112,142,1],[112,90,1],[55,86,1],[55,86,0],[112,92,0]];C.push({name:'ثاني/١',src:[55,142,1],evac:[...pre,[200,150,0],...OUT_E],air:[...pre,[160,88,0]]});}
+  [[197,'أول/٥'],[252,'أول/٤']].forEach(([y,n])=>{const pre=[[112,y,1],[112,90,1],[55,86,1],[55,86,0],[112,92,0]];
+    C.push({name:n,src:[55,y,1],evac:[...pre,[200,150,0],...OUT_E],air:[[112,y,1],[112,274,1],...EAST_DOWN]});});
+  [[150,'أول/٣'],[230,'أول/٢'],[310,'أول/١']].forEach(([x,n])=>{const pre=[[x,274,1],[290,274,1],[290,182,1],[495,180,1],[545,177,1],[545,177,0],[495,177,0],[455,176,0]];
+    const alt=[[x,274,1],[112,274,1],[112,90,1],[55,86,1],[55,86,0],[112,92,0],[200,150,0],...OUT_E];
+    C.push({name:n,src:[x,307,1],evac:[...pre.slice(0,-1),[420,175,0],[330,180,0],...OUT_E],air:[...pre],lab:alt});});
+  C.forEach(c=>{if(!c.lab)c.lab=c.evac;});
+  return C;
+}
+const CLASSES=classRoutes();
+const PER=8;                 // dots per class (≈ 4 students each → ~500)
+const STU_PER_DOT=500/(CLASSES.length*PER);
+
+/* ---------- three setup ---------- */
+const stage=$('stage');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(40,1,0.1,600);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const lr=new THREE.CSS2DRenderer();
+lr.domElement.style.position='absolute';lr.domElement.style.inset='0';lr.domElement.style.pointerEvents='none';
+$('labels').appendChild(lr.domElement);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.47;controls.minDistance=8;controls.maxDistance=220;
+const hemi=new THREE.HemisphereLight(0xffffff,0x9bb8b6,0.75);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,0.75);sun.position.set(-25,60,35);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-45,right:45,top:40,bottom:-40,near:1,far:150});scene.add(sun);
+const alarmLight=new THREE.PointLight(0xff3030,0,60);alarmLight.position.set(0,12,0);scene.add(alarmLight);
+
+const floors=[new THREE.Group(),new THREE.Group()];
+scene.add(floors[0],floors[1]);
+const layers={ext:[],exit:[],asm:[],meter:[],route:[],room:[]};
+const themed=[];  // [material, token]
+function M(token,opts={}){const m=new THREE.MeshStandardMaterial(Object.assign({color:col(token),roughness:.85,metalness:0},opts));themed.push([m,token]);return m;}
+const slabs=[];
+
+function wallSeg(g,x1,z1,x2,z2,y0,mat){
+  const len=Math.hypot(x2-x1,z2-z1); if(len<0.05)return;
+  const m=new THREE.Mesh(new THREE.BoxGeometry(len,WALL,WT),mat);
+  m.position.set((x1+x2)/2,y0+WALL/2,(z1+z2)/2);m.rotation.y=-Math.atan2(z2-z1,x2-x1);
+  m.castShadow=true;m.receiveShadow=true;g.add(m);
+}
+function build(){
+  // ground plane + yard + road
+  const gp=new THREE.Mesh(new THREE.PlaneGeometry(160,120),M('--ground'));gp.rotation.x=-Math.PI/2;gp.position.y=-0.3;gp.receiveShadow=true;scene.add(gp);
+  const yard=new THREE.Mesh(new THREE.PlaneGeometry(42,12),M('--accent-soft'));yard.rotation.x=-Math.PI/2;yard.position.set(6,-0.26,23);yard.receiveShadow=true;
+  yard.userData={floor:0};floors[0].add(yard);slabs.push(yard);
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(160,6),M('--muted',{roughness:1}));road.rotation.x=-Math.PI/2;road.position.set(0,-0.28,34);scene.add(road);
+  const wallMat=M('--wall');
+  for(let f=0;f<2;f++){
+    const g=floors[f];
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(60.6,0.3,33.4),M('--slab',f===1?{transparent:true,opacity:.6,depthWrite:false}:{}));
+    slab.position.set(0,FY[f]-0.15,0);slab.receiveShadow=true;slab.castShadow=f===1;slab.userData={floor:f};g.add(slab);slabs.push(slab);
+    if(f===1){ // columns to read as a building
+      [[-30,-16.5],[30,-16.5],[-30,16.5],[30,16.5],[0,-16.5],[0,16.5]].forEach(([x,z])=>{const c=new THREE.Mesh(new THREE.BoxGeometry(0.5,FY[1],0.5),wallMat);c.position.set(x,FY[1]/2-0.3,z);c.castShadow=true;scene.add(c);c.userData.col=true;layers.room.push(c);c.userData.floor=-1;});
+    }
+  }
+  ROOMS.forEach(([f,x,y,w,h,label,kind,door])=>{
+    const g=floors[f];
+    const tok={cls:'--room',adm:'--room-adm',svc:'--room-svc',haz:'--room-haz',stair:'--stair'}[kind];
+    const fl=new THREE.Mesh(new THREE.BoxGeometry(w/10-0.04,0.06,h/10-0.04),M(tok));
+    fl.position.copy(P(x+w/2,y+h/2,f,0.03));fl.receiveShadow=true;g.add(fl);
+    if(kind==='stair'){
+      for(let i=0;i<7;i++){const s=new THREE.Mesh(new THREE.BoxGeometry(w/10*0.86,0.18+i*0.18,h/10/8),M('--stair'));
+        s.position.copy(P(x+w/2,y+h*(i+0.8)/8,f,(0.18+i*0.18)/2));s.castShadow=true;g.add(s);}
+    } else {
+      const x1=(x-300)/10,x2=(x+w-300)/10,z1=(y-170)/10,z2=(y+h-170)/10,y0=FY[f];
+      const gap=1.1;
+      const side=(a,b,c,d,isDoor)=>{ if(!isDoor){wallSeg(g,a,b,c,d,y0,wallMat);return;}
+        const mx=(a+c)/2,mz=(b+d)/2,len=Math.hypot(c-a,d-b),ux=(c-a)/len,uz=(d-b)/len;
+        wallSeg(g,a,b,mx-ux*gap/2,mz-uz*gap/2,y0,wallMat);wallSeg(g,mx+ux*gap/2,mz+uz*gap/2,c,d,y0,wallMat);};
+      side(x1,z1,x2,z1,door==='n');side(x1,z2,x2,z2,door==='s');side(x1,z1,x1,z2,door==='w');side(x2,z1,x2,z2,door==='e');
+    }
+    const d=document.createElement('div');d.className='rl'+(kind==='cls'?' cls':'');d.textContent=label;
+    const o=new THREE.CSS2DObject(d);o.position.copy(P(x+w/2,y+h/2,f,kind==='stair'?1.8:0.4));o.userData={floor:f};g.add(o);layers.room.push(o);
+  });
+  {const yl=document.createElement('div');yl.className='rl';yl.textContent='الساحة الخارجية';
+   const yo=new THREE.CSS2DObject(yl);yo.position.set(-8,0.2,26);yo.userData={floor:0};floors[0].add(yo);layers.room.push(yo);}
+  // extinguishers
+  EXT.forEach(([f,n,x,y,t,loc])=>{
+    const r=t==='l'?0.3:0.22,hh=t==='l'?1.0:0.75;
+    const pin=new THREE.Mesh(new THREE.CylinderGeometry(r,r,hh,16),M(TYPE[t][1]));
+    pin.position.copy(P(x,y,f,hh/2));pin.castShadow=true;floors[f].add(pin);
+    const d=mk(ar(n),'var('+TYPE[t][1]+')',t==='l'?'l':'');
+    d.onclick=()=>info('طفاية رقم '+ar(n)+' · '+(f?'الدور الأول':'الدور الأرضي'),loc+'. النوع: '+TYPE[t][0]+'.');
+    const o=new THREE.CSS2DObject(d);o.position.copy(P(x,y,f,hh+0.7));o.userData={floor:f,ext:[f,n,x,y,t,loc]};floors[f].add(o);
+    layers.ext.push(o,pin);pin.userData.floor=f;
+  });
+  {const b=new THREE.Mesh(new THREE.BoxGeometry(1,1,0.3),M('--accent'));b.position.copy(P(445,262,0,0.9));floors[0].add(b);
+   const d=mk('خرطوم','var(--accent)','sqr wide');d.onclick=()=>info('صندوق خرطوم حريق','عند الإدارة، وفيه خانة طفاية. لا يُستخدم الماء على حريق كهربائي.');
+   const o=new THREE.CSS2DObject(d);o.position.copy(P(445,262,0,1.9));o.userData={floor:0};floors[0].add(o);b.userData.floor=0;layers.ext.push(o,b);}
+  METERS.forEach(([f,n,x,y,loc])=>{const d=mk('⚡'+ar(n),'var(--meter)','');d.style.color='#3a2500';
+    d.onclick=()=>info('العداد الكهربائي '+ar(n),loc+'. '+(f?'المسؤولات عن فصل التيار: نورة السبيعي وفاطمة القرني.':'المسؤولة عن فصل التيار: بنان عسيري.'));
+    const o=new THREE.CSS2DObject(d);o.position.copy(P(x,y,f,1.6));o.userData={floor:f};floors[f].add(o);layers.meter.push(o);});
+  EXITS.forEach(([f,x,y,name,desc,isExit])=>{const d=mk(isExit?'مخرج':'درج','var(--exit)','sqr wide');d.onclick=()=>info(name,desc);
+    const o=new THREE.CSS2DObject(d);o.position.copy(P(x,y,f,2.4));o.userData={floor:f};floors[f].add(o);layers.exit.push(o);
+    if(isExit){const s=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.6,0.12),M('--exit',{emissive:col('--exit'),emissiveIntensity:.5}));s.position.copy(P(x,y,f,1.7));floors[f].add(s);s.userData.floor=f;layers.exit.push(s);
+      const door=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.3,0.08),M('--exit',{transparent:true,opacity:.45}));door.position.copy(P(x,y,f,0.65));floors[f].add(door);door.userData.floor=f;layers.exit.push(door);}});
+  ASM.forEach(([f,x,y,name,desc,kind])=>{const R=kind==='out'?3.4:2;
+    const disc=new THREE.Mesh(new THREE.CircleGeometry(R,48),new THREE.MeshBasicMaterial({color:col('--assembly'),transparent:true,opacity:.18}));
+    disc.rotation.x=-Math.PI/2;disc.position.copy(P(x,y,f,0.08));floors[f].add(disc);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(R-0.25,R,48),new THREE.MeshBasicMaterial({color:col('--assembly'),side:THREE.DoubleSide}));
+    ring.rotation.x=-Math.PI/2;ring.position.copy(P(x,y,f,0.09));floors[f].add(ring);
+    const d=mk(name,'var(--assembly)','wide');d.onclick=()=>info('نقطة تجمع: '+name,desc);
+    const o=new THREE.CSS2DObject(d);o.position.copy(P(x,y,f,1.2));o.userData={floor:f};floors[f].add(o);
+    [disc,ring].forEach(m=>m.userData.floor=f);layers.asm.push(o,disc,ring);});
+  // alarm bell (admin) and civil defense truck
+  bell=new THREE.Mesh(new THREE.SphereGeometry(0.45,16,12),new THREE.MeshStandardMaterial({color:0xff3b3b,emissive:0xff0000,emissiveIntensity:0}));
+  bell.position.copy(P(470,190,0,1.5));floors[0].add(bell);
+  truck=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(5,2,2.2),new THREE.MeshStandardMaterial({color:0xd8262b}));body.position.y=1.2;body.castShadow=true;truck.add(body);
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.6,2.2),new THREE.MeshStandardMaterial({color:0xf2f2f2}));cab.position.set(-3.2,1,0);truck.add(cab);
+  truckLight=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.3,1.2),new THREE.MeshStandardMaterial({color:0x3b6fd8,emissive:0x3b6fd8,emissiveIntensity:1}));truckLight.position.set(0,2.35,0);truck.add(truckLight);
+  truck.position.set(-80,-0.3,34);truck.visible=false;scene.add(truck);
+}
+let bell,truck,truckLight;
+function mk(txt,bg,cls){const d=document.createElement('div');d.className='mk '+(cls||'');d.style.background=bg;d.textContent=txt;d.tabIndex=0;
+  d.addEventListener('keydown',e=>{if(e.key==='Enter')d.click()});return d;}
+
+/* ---------- flowing route arrows ---------- */
+let arrows=[],arrowMeshes=[];
+const arrowGeo=new THREE.ConeGeometry(0.28,0.7,8);arrowGeo.rotateX(Math.PI/2);
+function buildArrows(){
+  arrowMeshes.forEach(m=>m.parent&&m.parent.remove(m));arrowMeshes=[];arrows=[];
+  layers.route=[];
+  const key=scen==='air'?'air':scen==='lab'?'lab':'evac';
+  const mat=new THREE.MeshBasicMaterial({color:col(scen==='air'?'--assembly':'--accent')});
+  CLASSES.forEach(c=>{
+    const path=[c.src,...c[key]].map(([x,y,f])=>P(x,y,f,0.2));
+    const lens=[];let tot=0;for(let k=1;k<path.length;k++){const L=path[k].distanceTo(path[k-1]);lens.push(L);tot+=L;}
+    const n=Math.max(4,Math.round(tot/4));
+    for(let i=0;i<n;i++){const m=new THREE.Mesh(arrowGeo,mat);scene.add(m);arrowMeshes.push(m);layers.route.push(m);
+      arrows.push({m,path,lens,tot,off:i/n});}
+  });
+  applyVisibility();
+}
+const tmpV=new THREE.Vector3();
+function along(path,lens,d,out){let k=0;while(k<lens.length-1&&d>lens[k]){d-=lens[k];k++;}const t=Math.min(1,d/lens[k]);out.lerpVectors(path[k],path[k+1],t);return k;}
+function stepArrows(t){
+  arrows.forEach(a=>{const d=((t*0.12+a.off)%1)*a.tot;const k=along(a.path,a.lens,d,a.m.position);
+    tmpV.copy(a.path[k+1]);a.m.lookAt(tmpV);
+    const f=a.m.position.y>FY[1]*0.5?1:0;a.m.visible=on.route&&floorOK(f);});
+}
+
+/* ---------- visibility ---------- */
+let floorView='0';
+const on={ext:true,exit:true,asm:true,meter:false,route:true,room:true};
+function floorOK(f){return floorView==='all'||String(f)===floorView}
+function applyVisibility(){
+  floors[0].visible=floorOK(0);floors[1].visible=floorOK(1);
+  for(const k in layers){layers[k].forEach(o=>{
+    const f=o.userData.floor;
+    let vis=on[k]&&(f===-1||f===undefined||floorOK(f));
+    if(o.userData.col) vis=floorView==='all';
+    if(k==='room'&&o.element&&floorView==='all') vis=vis&&o.element.classList.contains('cls')===false&&false;
+    if(o.element&&floorView==='all'&&f===0&&(k==='ext'||k==='meter'||k==='room'))vis=false;
+    o.visible=vis; if(o.element) o.element.style.display=vis?'':'none';
+  });}
+  floors.forEach((g,f)=>g.traverse(o=>{if(o.element&&!floorOK(f))o.element.style.display='none';}));
+  agents.forEach(a=>{a.mesh.visible=floorOK(a.floorNow);});staff.forEach(a=>{if(simT>a.delay){a.mesh.visible=floorOK(a.floorNow);a.tag.visible=a.mesh.visible;a.tag.element.style.display=a.mesh.visible?'':'none';}});
+  renderExtList();
+}
+
+/* ---------- camera ---------- */
+let view='3d',camGoal=null;
+function camFor(){
+  const narrow=innerWidth<760;
+  const ty=floorView==='all'?3.5:(floorView==='1'?FY[1]:0);
+  const tx=narrow?2:-8, tz=narrow?6:4;
+  const tgt=new THREE.Vector3(tx,ty,tz);
+  let pos;
+  if(narrow){ pos= view==='top'? new THREE.Vector3(tx+0.01,ty+150,tz) : new THREE.Vector3(tx+72,ty+96,tz+16); }
+  else pos= view==='top'? new THREE.Vector3(tx,ty+76,tz+0.01) : new THREE.Vector3(tx-8,ty+50,tz+58);
+  return {tgt,pos};
+}
+function setCam(instant){camera.up.set(innerWidth<760&&view==='top'?1:0,innerWidth<760&&view==='top'?0:1,0);const c=camFor();if(instant){controls.target.copy(c.tgt);camera.position.copy(c.pos);controls.update();camGoal=null;}else camGoal=c;}
+function moveCam(dt){ if(!camGoal)return; const k=1-Math.pow(0.002,dt);
+  controls.target.lerp(camGoal.tgt,k);camera.position.lerp(camGoal.pos,k);
+  if(camera.position.distanceTo(camGoal.pos)<0.2)camGoal=null; }
+renderer.domElement.addEventListener('pointerdown',()=>{camGoal=null;userMoved=true;});
+let userMoved=false;
+
+/* ---------- simulation ---------- */
+let scen='evac',agents=[],staff=[],running=false,simT=0,speed=4,smoke=[],labFire=null;
+const agentGeo=new THREE.SphereGeometry(0.2,10,8), teachGeo=new THREE.CylinderGeometry(0.22,0.22,0.9,10), staffGeo=new THREE.CylinderGeometry(0.24,0.24,1,10);
+const WALK=1.3, ALARM_T=8;
+function makePath(pts){const path=pts.map(([x,y,f,l])=>P(x,y,f,l===undefined?0.22:l));const lens=[];let tot=0;
+  for(let k=1;k<path.length;k++){const L=path[k].distanceTo(path[k-1]);lens.push(L);tot+=L;}return {path,lens,tot};}
+function key(){return scen==='air'?'air':scen==='lab'?'lab':'evac'}
+function clearSim(){agents.concat(staff).forEach(a=>{a.mesh.parent&&a.mesh.parent.remove(a.mesh);if(a.tag)a.tag.parent.remove(a.tag);});agents=[];staff=[];
+  smoke.forEach(s=>scene.remove(s));smoke=[];if(labFire){floors[0].remove(labFire);labFire=null;}
+  truck.visible=false;truck.position.x=-80;}
+function makeAgents(){
+  clearSim();
+  const k=key();
+  const stuMat=new THREE.MeshStandardMaterial({color:col(scen==='air'?'--assembly':'--accent')});
+  const teachMat=new THREE.MeshStandardMaterial({color:col('--teacher')});
+  CLASSES.forEach((c,ci)=>{
+    const route=c[k];
+    const startDelay=ALARM_T+ (c.src[2]===1?4:2) + (ci%5)*1.2;
+    for(let i=0;i<=PER;i++){
+      const isT=i===0;
+      const jx=isT?0:((i-1)%4-1.5)*7, jy=isT?14:(Math.floor((i-1)/4)-0.5)*9;
+      const pts=[[c.src[0]+jx,c.src[1]+jy,c.src[2]],...route.map((p,kk,arr)=>{
+        const last=kk===arr.length-1;const sp=last?(scen==='air'?(c.near?3.5:11):24):2.5;
+        const ix=isT?0:((i-1)%4-1.5), iy=isT?0:(Math.floor((i-1)/4)-0.5);
+        return [p[0]+ix*sp*(last?0.9:0.6),p[1]+iy*sp*(last?1.1:0.8),p[2]];})];
+      const pth=makePath(pts);
+      const mesh=new THREE.Mesh(isT?teachGeo:agentGeo,isT?teachMat:stuMat);
+      if(isT) mesh.userData.h=0.45;
+      mesh.castShadow=true;mesh.position.copy(pth.path[0]);if(isT)mesh.position.y+=0.25;scene.add(mesh);
+      agents.push(Object.assign({mesh,delay:startDelay+(isT?0:0.6+i*0.45),done:false,floorNow:c.src[2],teacher:isT},pth));
+    }
+  });
+  // staff with roles (from the school's emergency roles)
+  const S=(name,pts,delay,speedMul=1)=>{const pth=makePath(pts);const mesh=new THREE.Mesh(staffGeo,new THREE.MeshStandardMaterial({color:col('--staff')}));
+    mesh.castShadow=true;mesh.position.copy(pth.path[0]);scene.add(mesh);
+    const d=document.createElement('div');d.className='tag';d.textContent=name;d.style.display='none';const tag=new THREE.CSS2DObject(d);tag.visible=false;tag.position.set(0,1.1,0);mesh.add(tag);mesh.visible=false;
+    staff.push(Object.assign({mesh,tag,delay,done:false,floorNow:pts[0][2],sp:speedMul,staff:true},pth));};
+  if(scen!=='air'){
+    S('نوال الجوهر: فتح المخارج',[[500,190,0],[430,240,0],[450,320,0],[400,300,0],[360,300,0],[367,60,0],[367,80,0],[360,300,0],[360,350,0]],2);
+    S('هيفاء الشريف: مسح الدور الأول',[[300,190,1],[112,90,1],[112,274,1],[350,274,1],[290,182,1],[112,90,1],[55,86,1],[55,86,0],[112,92,0],[200,150,0],...OUT_E],ALARM_T+30,0.9);
+    S('سعاد البراهيم: مسح الأرضي',[[300,250,0],[108,150,0],[108,300,0],[150,72,0],[60,72,0],[225,72,0],[300,262,0],...OUT_E],ALARM_T+25,0.9);
+    S('أمل الزهراني: الحصر بالكشوف',[[480,190,0],[420,180,0],[330,180,0],...OUT_E.slice(0,3),[360,400,0]],4);
+  } else {
+    S('هيفاء الشريف: مرافقة ذوات الإعاقة',[[300,190,1],[112,90,1],[55,86,1],[55,86,0],[112,92,0],[300,90,0],[470,60,0]],ALARM_T+6,0.7);
+    S('أمل الزهراني: الحصر',[[480,190,0],[455,186,0],[300,150,0],[170,100,0]],4);
+  }
+  if(scen==='lab'){
+    labFire=new THREE.Group();
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(0.9,2.4,16),new THREE.MeshStandardMaterial({color:col('--meter'),emissive:col('--fire'),emissiveIntensity:.9}));cone.position.y=1.2;labFire.add(cone);
+    labFire.position.copy(P(520,125,0));floors[0].add(labFire);
+  }
+  $('st-total').textContent=ar(500);$('st-safe').textContent=ar(0);$('st-time').textContent=fmt(0);$('prog').style.width='0%';
+  simT=0;renderLog(-1);setPhase(-1);$('alarm').className='';bell.material.emissiveIntensity=0;alarmLight.intensity=0;
+  applyVisibility();
+}
+function moveAgent(a,t){
+  let d=t*WALK*(a.sp||1); if(d>=a.tot){a.mesh.position.copy(a.path[a.path.length-1]);if(a.teacher)a.mesh.position.y+=0.25;a.done=true;return;}
+  along(a.path,a.lens,d,a.mesh.position); if(a.teacher||a.staff)a.mesh.position.y+=0.3;
+  a.floorNow=a.mesh.position.y>FY[1]*0.5?1:0; a.mesh.visible=floorOK(a.floorNow);
+  if(a.tag){a.mesh.visible=floorOK(a.floorNow);a.tag.visible=a.mesh.visible;a.tag.element.style.display=a.mesh.visible?'':'none';}
+}
+function stepSim(){
+  let safe=0,stu=0;
+  agents.forEach(a=>{if(!a.teacher)stu++; if(a.done){if(!a.teacher)safe++;return;} const t=simT-a.delay; if(t>0)moveAgent(a,t); if(a.done&&!a.teacher)safe++;});
+  staff.forEach(a=>{if(a.done)return;const t=simT-a.delay;if(t>0)moveAgent(a,t);});
+  const n=Math.round(safe*STU_PER_DOT);
+  $('st-safe').textContent=ar(Math.min(500,n));$('st-time').textContent=fmt(simT);
+  $('prog').style.width=(safe/stu*100)+'%';
+  // alarm phase
+  const alarmOn=simT<ALARM_T+ (scen==='air'?20:12);
+  $('alarm').className=alarmOn?('on '+(scen==='air'?'air':'fire')):'';
+  bell.material.emissiveIntensity=alarmOn?(Math.sin(simT*8)>0?1.4:0.1):0;
+  alarmLight.color.set(scen==='air'?0x3b6fd8:0xff3030);alarmLight.intensity=alarmOn?(Math.sin(simT*8)>0?1.2:0):0;
+  siren(alarmOn&&running);
+  // smoke in lab scenario
+  if(scen==='lab'&&smoke.length<26&&simT>2&&Math.random()<0.15){
+    const s=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),new THREE.MeshStandardMaterial({color:0x555555,transparent:true,opacity:.35,depthWrite:false}));
+    s.position.copy(P(520+(Math.random()-0.5)*60,125+(Math.random()-0.5)*30,0,1.5));s.userData.v=new THREE.Vector3((Math.random()-0.2)*0.4,0.25,(Math.random()-0.3)*0.3);scene.add(s);smoke.push(s);}
+  smoke.forEach(s=>{if(s.position.y<FY[1]+4){s.position.addScaledVector(s.userData.v,0.06);s.scale.multiplyScalar(1.004);}});
+  // civil defense truck
+  if(scen!=='air'&&simT>60){truck.visible=true;const tx=Math.min(4.5,-80+(simT-60)*2.2);truck.position.x=tx;truckLight.material.emissiveIntensity=Math.sin(simT*10)>0?1.5:0.2;}
+  // phase + log
+  const allSafe=safe===stu;
+  const ph= simT<ALARM_T?0 : !allSafe?1 : (staff.some(s=>!s.done)?2:3);
+  setPhase(ph); renderLog(simT);
+  if(ph===3&&!staff.some(s=>!s.done)&&simT>(lastLogT()+2)&&running){running=false;siren(false);$('sim-play').textContent='انتهت المحاكاة · أعيدي';
+    banner(scen==='air'?'اكتمل التجمع الداخلي':'اكتمل الإخلاء',(scen==='air'?'كل الطالبات في نقاط التجمع الداخلية خلال ':'كل الطالبات في الساحة الخارجية خلال ')+fmt(evacDone||simT)+'.');}
+  if(allSafe&&!evacDone)evacDone=simT;
+}
+let evacDone=0;
+function fmt(s){s=Math.floor(s);return ar(Math.floor(s/60))+':'+ar(String(s%60).padStart(2,'0'))}
+
+/* ---------- event log (roles from the school plan) ---------- */
+const LOGS={
+ evac:[[0,'دق جرس الإنذار','أمل الزهراني'],[3,'إبلاغ الدفاع المدني وإدارة التعليم','نوال الجوهر'],[5,'فتح المداخل والمخارج','نوال الجوهر والحارس وسراء الشهري'],
+   [8,'خروج الفصول مع معلماتها بالترتيب','جميع المعلمات'],[12,'إخراج الطالبات من السلالم دون تدافع','الجميع ومعلمات الفصول'],[30,'مسح الفصول ودورات المياه ومرافقة ذوات الإعاقة','هيفاء الشريف وسعاد البراهيم'],
+   ['safe','وصول جميع الطالبات إلى الساحة الخارجية',''],[60,'استقبال فريق الدفاع المدني','نوال الجوهر والحارس وسراء الشهري'],['end','حصر الطالبات بالكشوف وحصر الإصابات','أمل الزهراني'],['end2','منع العودة إلى المبنى حتى صدور التوجيهات','الجميع']],
+ lab:[[0,'رصد حريق في المختبر ودق جرس الإنذار','أمل الزهراني'],[2,'فصل التيار من عداد الدور الأرضي','بنان عسيري'],[3,'إبلاغ الدفاع المدني وإدارة التعليم','نوال الجوهر'],
+   [5,'الدرج الشرقي مغلق بالدخان، تحويل كل فصول الدور الأول للدرج الغربي','المعلمات'],[8,'خروج الفصول مع معلماتها','جميع المعلمات'],[30,'مسح الفصول ودورات المياه','هيفاء الشريف وسعاد البراهيم'],
+   ['safe','وصول جميع الطالبات إلى الساحة الخارجية',''],[60,'استقبال فريق الدفاع المدني','نوال الجوهر والحارس وسراء الشهري'],['end','حصر الطالبات بالكشوف وحصر الإصابات','أمل الزهراني'],['end2','منع العودة إلى المبنى','الجميع']],
+ air:[[0,'جرس الإنذار وإبلاغ الدفاع المدني وإدارة التعليم','نوال الجوهر'],[4,'استقبال الطالبات في نقاط التجمع الداخلية','جميع المعلمات'],[8,'صفوف أول تنزل من الدرج الشرقي، وصفوف ثاني من الدرج الغربي','الجميع ومعلمات الفصول'],[9,'صفوف ثالث تخرج وتقف عند أبواب فصولها','معلمات صفوف ثالث'],
+   [14,'مرافقة ذوات الإعاقة إلى مصادر التعلم','هيفاء الشريف'],['safe','الجميع في نقاط التجمع الداخلية بعيدًا عن النوافذ',''],
+   ['end','الجلوس بمحاذاة الجدران الداخلية والحصر بالكشوف','أمل الزهراني'],['end2','البقاء حتى صدور التوجيهات','الجميع']]
+};
+function logTime(t){ if(t==='safe')return evacDone||Infinity; if(t==='end')return evacDone?evacDone+3:Infinity; if(t==='end2')return evacDone?evacDone+5:Infinity; return t;}
+function lastLogT(){return evacDone?evacDone+5:Infinity}
+function renderLog(now){
+  const L=LOGS[scen];const el=$('log');
+  if(el.dataset.s!==scen){el.dataset.s=scen;el.innerHTML=L.map(r=>`<div><time></time><div>${r[1]}${r[2]?`<small>${r[2]}</small>`:''}</div></div>`).join('');}
+  let cur=-1;
+  [...el.children].forEach((d,i)=>{const t=logTime(L[i][0]);const onn=now>=t;d.classList.toggle('on',onn);if(onn)cur=i;
+    d.querySelector('time').textContent=isFinite(t)?fmt(t):'—';});
+  [...el.children].forEach((d,i)=>d.classList.toggle('now',i===cur&&running));
+  if(cur>=0&&running&&cur!==lastCur){lastCur=cur;banner(L[cur][1],L[cur][2]);}
+}
+let lastCur=-1;
+function setPhase(p){[...$('phases').children].forEach((s,i)=>{s.className=i<p?'done':i===p?'on':'';});}
+let bannerT=0;
+function banner(h,p){$('banner-h').textContent=h;$('banner-p').textContent=p||'';$('banner').hidden=false;clearTimeout(bannerT);bannerT=setTimeout(()=>$('banner').hidden=true,5000);}
+
+/* ---------- siren (WebAudio, starts only after a click) ---------- */
+let actx=null,osc=null,gain=null;
+function siren(onn){
+  if(!$('sound').checked)onn=false;
+  if(onn&&!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();osc=actx.createOscillator();gain=actx.createGain();osc.type='sawtooth';gain.gain.value=0;osc.connect(gain).connect(actx.destination);osc.start();}catch(e){return;}}
+  if(!actx)return;
+  gain.gain.setTargetAtTime(onn?0.05:0,actx.currentTime,0.05);
+  if(onn)osc.frequency.setTargetAtTime(scen==='air'?(Math.sin(performance.now()/900)>0?520:380):(Math.sin(performance.now()/250)>0?900:650),actx.currentTime,0.08);
+}
+
+/* ---------- fire picking ---------- */
+let picking=false,fireObj=null,fireLines=[];
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+let downAt=null;
+renderer.domElement.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY]});
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!picking||!downAt)return; if(Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>6)return;
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(slabs.filter(s=>s.parent.visible),false);
+  if(!hits.length)return;
+  placeFire(hits[0].point,hits[0].object.userData.floor);picking=false;$('hint').hidden=true;
+});
+function placeFire(pt,f){
+  clearFire();
+  const here=new THREE.Vector3(pt.x,FY[f],pt.z);
+  const g=new THREE.Group();
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(0.7,2,16),new THREE.MeshStandardMaterial({color:col('--meter'),emissive:col('--fire'),emissiveIntensity:.9}));cone.position.y=1;g.add(cone);
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(2.4,40),new THREE.MeshBasicMaterial({color:col('--fire'),transparent:true,opacity:.3}));glow.rotation.x=-Math.PI/2;glow.position.y=0.1;g.add(glow);
+  g.position.copy(here);scene.add(g);fireObj=g;
+  const near=EXT.filter(e=>e[0]===f).map(e=>({e,d:P(e[2],e[3],f).distanceTo(here)})).sort((a,b)=>a.d-b.d).slice(0,3);
+  const exits=EXITS.filter(x=>x[0]===f).map(x=>({x,d:P(x[1],x[2],f).distanceTo(here)})).sort((a,b)=>a.d-b.d);
+  near.forEach(({e})=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([here.clone().setY(FY[f]+0.4),P(e[2],e[3],f,0.4)]),new THREE.LineBasicMaterial({color:col('--fire')}));
+    scene.add(l);fireLines.push(l);layers.ext.forEach(o=>{if(o.userData.ext&&o.userData.ext[0]===f&&o.userData.ext[1]===e[1])o.element.classList.add('hot');});});
+  if(exits[0]){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([here.clone().setY(FY[f]+0.4),P(exits[0].x[1],exits[0].x[2],f,0.4)]),new THREE.LineDashedMaterial({color:col('--exit'),dashSize:.6,gapSize:.3}));
+    l.computeLineDistances();scene.add(l);fireLines.push(l);}
+  const L=$('fire-list');L.hidden=false;
+  L.innerHTML=near.map(({e,d})=>`<div><span class="n" style="color:var(${TYPE[e[4]][1]})">${ar(e[1])}</span>${e[5]}<span class="t">${ar(Math.round(d))} م</span></div>`).join('')+
+    (exits[0]?`<div><span class="n" style="color:var(--exit)">↩</span>${f?'أقرب نزول: ':'أقرب مخرج: '}${exits[0].x[3]}<span class="t">${ar(Math.round(exits[0].d))} م</span></div>`:'');
+  info('حريق افتراضي · '+(f?'الدور الأول':'الدور الأرضي'),'أقرب طفاية: رقم '+ar(near[0].e[1])+' ('+near[0].e[5]+'، على بعد '+ar(Math.round(near[0].d))+' م). استخدميها إذا كان الحريق صغيرًا، وإلا اخرجي فورًا عبر '+(exits[0]?exits[0].x[3]:'أقرب مخرج')+'.');
+}
+function clearFire(){if(fireObj){scene.remove(fireObj);fireObj=null;}fireLines.forEach(l=>scene.remove(l));fireLines=[];document.querySelectorAll('.mk.hot').forEach(e=>e.classList.remove('hot'));}
+
+/* ---------- UI wiring ---------- */
+function info(h,p){$('info-h').textContent=h;$('info-p').textContent=p;$('info').hidden=false;}
+$('info-x').onclick=()=>$('info').hidden=true;
+function seg(ids,cb){ids.forEach(id=>{$(id).onclick=()=>{ids.forEach(i=>$(i).setAttribute('aria-pressed',i===id));cb(id);};});}
+seg(['f-all','f-0','f-1'],id=>{floorView=id==='f-all'?'all':id.slice(2);applyVisibility();setCam();save();});
+seg(['v-3d','v-top'],id=>{view=id==='v-top'?'top':'3d';setCam();});
+document.querySelectorAll('#layers .chip').forEach(c=>c.onclick=()=>{const k=c.dataset.layer;on[k]=!on[k];c.setAttribute('aria-pressed',on[k]);applyVisibility();save();});
+const tabs=['map','sim','how','team'];
+tabs.forEach(t=>$('t-'+t).onclick=()=>{tabs.forEach(x=>{$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).hidden=x!==t;});$('panel').classList.remove('min');$('grip').textContent='▾';});
+$('grip').onclick=()=>{const m=$('panel').classList.toggle('min');$('grip').textContent=m?'▴':'▾';};
+document.querySelectorAll('#scen button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  scen=b.dataset.s;running=false;siren(false);$('sim-play').textContent='ابدئي المحاكاة';evacDone=0;lastCur=-1;makeAgents();buildArrows();});
+$('sim-play').onclick=()=>{
+  if(!running&&(simT===0||evacDone&&!staff.some(s=>!s.done))){evacDone=0;lastCur=-1;makeAgents();
+    if($('follow').checked){floorView='all';['f-all','f-0','f-1'].forEach(i=>$(i).setAttribute('aria-pressed',i==='f-all'));applyVisibility();setCam();}
+    if(innerWidth<760){$('panel').classList.add('min');$('grip').textContent='▴';}}
+  running=!running;$('sim-play').textContent=running?'إيقاف مؤقت':'متابعة';if(!running)siren(false);};
+$('sim-reset').onclick=()=>{running=false;siren(false);evacDone=0;lastCur=-1;makeAgents();$('sim-play').textContent='ابدئي المحاكاة';$('banner').hidden=true;};
+$('speed').oninput=()=>{speed=+$('speed').value;$('speed-v').textContent='×'+ar(speed);};
+$('sound').onchange=()=>{if(!$('sound').checked)siren(false);};
+$('fire-pick').onclick=()=>{picking=true;$('hint').hidden=false;clearFire();$('fire-list').hidden=true;if(innerWidth<760){$('panel').classList.add('min');$('grip').textContent='▴';}};
+
+function renderExtList(){
+  const fs=floorView==='all'?[0,1]:[+floorView];
+  const items=EXT.filter(e=>fs.includes(e[0]));
+  $('ext-title').textContent='طفايات الحريق ('+ar(items.length)+')';
+  $('ext-list').innerHTML=items.map(e=>`<div data-k="${e[0]}-${e[1]}" style="cursor:pointer"><span class="n" style="color:var(${TYPE[e[4]][1]})">${ar(e[1])}</span>${e[5]}<span class="t">${e[0]?'الأول':'الأرضي'}</span></div>`).join('')+
+    '';
+  document.querySelectorAll('#ext-list [data-k]').forEach(r=>r.onclick=()=>{const [f,n]=r.dataset.k.split('-').map(Number);
+    const o=layers.ext.find(o=>o.userData.ext&&o.userData.ext[0]===f&&o.userData.ext[1]===n);if(!o)return;o.element.click();
+    document.querySelectorAll('.mk.hot').forEach(e=>e.classList.remove('hot'));o.element.classList.add('hot');setTimeout(()=>o.element.classList.remove('hot'),2500);});
+}
+
+/* ---------- extinguisher trainer ---------- */
+const T={pin:false,dist:6,aim:null,sweep:false,hold:false,fire:100,done:false,distOK:false};
+const chk=[...$('tchecks').children];
+function tmsg(t,c){const m=$('tmsg');m.textContent=t;m.className='tmsg '+(c||'');}
+function tupdate(){
+  chk[0].classList.toggle('done',T.pin);chk[1].classList.toggle('done',T.distOK);chk[2].classList.toggle('done',T.aim==='base');
+  chk[3].classList.toggle('done',T.hold&&T.pin);chk[4].classList.toggle('done',T.sweep&&T.hold&&T.pin);
+  $('tpin').style.display=T.pin?'none':'';$('tpinbtn').disabled=T.pin;
+  const ex=70+(6-T.dist)*30; $('text').setAttribute('transform',`translate(${ex} 160)`);
+  $('tdist').textContent=ar(String(T.dist).replace('.','٫'))+' م';
+  $('tdv').textContent=ar(String(T.dist).replace('.','٫'))+' م';
+  const s=Math.max(0,T.fire/100);[...$('tfire').querySelectorAll('.fl')].forEach((p,i)=>p.setAttribute('transform',`scale(${(0.15+0.85*s).toFixed(3)})`));
+  $('tfirebar').style.width=T.fire+'%';
+  $('thold').classList.toggle('active',T.hold);
+}
+const pullPin=()=>{if(T.done)return;T.pin=true;tmsg('تم سحب المسمار. الآن اقتربي إلى مسافة بين ٢ و٤ أمتار.','ok');tupdate();};
+$('tpin').addEventListener('click',pullPin);$('tpinbtn').onclick=pullPin;
+$('tdistance').oninput=()=>{T.dist=+$('tdistance').value;T.distOK=T.dist>=2&&T.dist<=4;
+  if(!T.pin)tmsg('اسحبي مسمار الأمان أولًا.','bad');else if(T.dist>4)tmsg('بعيدة: المادة لن تصل للنار.','bad');else if(T.dist<2)tmsg('قريبة جدًا: خطر على نفسك.','bad');else tmsg('مسافة مناسبة. وجّهي الفوهة لقاعدة النار.','ok');tupdate();};
+$('taim-top').onclick=()=>{T.aim='top';tmsg('التوجيه لأعلى اللهب لا يطفئ النار. وجّهي للقاعدة.','bad');tupdate();};
+$('taim-base').onclick=()=>{T.aim='base';tmsg(T.pin?'صحيح. الآن اضغطي المقبض باستمرار مع تحريك الفوهة.':'اسحبي مسمار الأمان أولًا.',T.pin?'ok':'bad');tupdate();};
+$('tsweep').onchange=()=>{T.sweep=$('tsweep').checked;tupdate();};
+const hold=$('thold');
+const hdown=e=>{e.preventDefault();T.hold=true;if(!T.pin)tmsg('المقبض لا يعمل قبل سحب المسمار.','bad');tupdate();};
+const hup=()=>{T.hold=false;tupdate();};
+hold.addEventListener('pointerdown',hdown);hold.addEventListener('pointerup',hup);hold.addEventListener('pointerleave',hup);hold.addEventListener('pointercancel',hup);
+hold.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){T.hold=true;tupdate();}});hold.addEventListener('keyup',hup);
+$('treset').onclick=()=>{Object.assign(T,{pin:false,dist:6,aim:null,sweep:false,hold:false,fire:100,done:false,distOK:false,t0:0});$('tdistance').value=6;$('tsweep').checked=false;
+  tmsg('ابدئي بسحب مسمار الأمان (المسي الحلقة على الطفاية).');tupdate();};
+let tAngle=0;
+function stepTrainer(dt,now){
+  const spray=$('tspray');spray.innerHTML='';
+  if(T.pin&&T.hold&&!T.done){
+    if(!T.t0)T.t0=now;
+    tAngle = T.sweep? Math.sin(now/220)*14 : 0;
+    const ex=70+(6-T.dist)*30; const sx=ex+52, sy=110;
+    const targetY = T.aim==='base'?150:(T.aim==='top'?80:120);
+    const reach=Math.min(290-sx, 4*30+20);
+    let pts='';for(let i=0;i<18;i++){const r=Math.random()*reach, a=(Math.random()-0.5)*0.35;const x=sx+r, y=sy+(targetY-sy)*(r/Math.max(1,290-sx))+a*r+tAngle*(r/reach);
+      pts+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2+r/40).toFixed(1)}" fill="var(--muted)" opacity="${(0.55-r/reach*0.4).toFixed(2)}"/>`;}
+    spray.innerHTML=pts;
+    $('tnoz').setAttribute('transform',`rotate(${tAngle*0.6} 8 -82)`);
+    let eff=0; if(T.dist<=4.5) eff=1; if(T.dist>4.5) eff=0.05;
+    if(T.aim!=='base') eff*=0.1; eff*= T.sweep?1:0.45;
+    T.fire=Math.max(0,T.fire-dt*22*eff);
+    if(T.fire<=0){T.done=true;T.hold=false;tmsg('انطفأت النار. أحسنتِ! راقبي المكان ولا تديري ظهرك للنار.','ok');}
+    else if(T.aim==='base'&&!T.sweep&&T.dist<=4) tmsg('النار تقل ببطء. فعّلي تحريك الفوهة يمينًا ويسارًا.','');
+    tupdate();
+  } else { $('tnoz').setAttribute('transform',''); }
+  if(!T.done&&T.fire<100&&!T.hold){T.fire=Math.min(100,T.fire+dt*3);tupdate();}
+}
+
+
+/* ---------- committee ---------- */
+const TEAM={
+ lead:[['نورة العتيبي','قائدة المدرسة',null],['بنان عسيري','وكيلة المدرسة · مكتبها في الأرشيف · فصل التيار من عدادات الدور الأرضي',[0,297,32]],['نوال الجوهر','الإشراف العام على خطة الإخلاء',[0,470,190]]],
+ roles:[['نوال الجوهر','جرس الإنذار، إبلاغ الدفاع المدني وإدارة التعليم، فتح وإقفال المداخل والمخارج، توجيه عاملات النظافة',[0,360,304]],
+   ['أمل الزهراني','دق جرس الإنذار، حصر الطالبات بالكشوف وحصر الإصابات',[0,380,420]],
+   ['نوال الجوهر · الحارس · سراء الشهري','استقبال فريق الدفاع المدني، فتح وإقفال المداخل والمخارج (سراء: خدمة المستفيد)',[0,360,304]],
+   ['هيفاء الشريف · سعاد البراهيم','مرافقة ذوات الإعاقة، مسح الفصول ودورات المياه للتأكد من الإخلاء',[1,55,86]],
+   ['نورة السبيعي · فاطمة القرني','فصل التيار وإعادته في الدور الأول',[1,412,92]],
+   ['جميع المعلمات','مرافقة طالبات الفصل إلى نقطة التجمع والتأكد من وجود الجميع، ومنع العودة إلى المبنى',[0,380,420]]],
+ air:[['صفوف أول','الدور الأرضي، قرب الدرج الشرقي بجانب الإدارة',[0,455,176]],['صفوف ثاني','الدور الأرضي، قرب الدرج الغربي بجانب دورة المياه',[0,160,88]],['صفوف ثالث','خارج فصولها عند الباب، الدور الأرضي',[0,108,224]]],
+ cls:[['الدور الأول','تبدأ بجانب غرفة الوكيلة: أول/١ (غرفة ٣٤) إلى أول/٥ (غرفة ٣٠)، ثم ثاني/١ (غرفة ٢٩) إلى ثاني/٥ (غرفة ٢٤) بجانب معمل الحاسب',[1,300,300]],
+   ['الدور الأرضي','تبدأ من غرفة المساعد الإداري: ثالث/١ (غرفة ٣١) إلى ثالث/٥ (غرفة ١٠) بجانب الأرشيف',[0,55,288]],
+   ['الأرشيف','مكتب بنان عسيري، بجانب ثالث/٥',[0,297,32]]],
+ floors:[['غادة القرني','الدور الأرضي · ثالث ١–٣',[0,190,40]],['هيفاء الشريف','الدور الأرضي · الدرج الثاني ودورات المياه',[0,545,170]],['أمل الحربي','الدور الأرضي · العيادة والمختبر',[0,500,120]],
+   ['حنان العتيبي','الدور الأرضي · ثالث ٤–٥ والمصادر',[0,495,40]],['سمية العويد','الدور الأول · الدرج الأول',[1,55,86]],['نورة السبيعي','الدور الأول · أول متوسط ١–٥',[1,250,40]],
+   ['فاطمة القرني','الدور الأول · ثاني متوسط ١–٥',[1,230,300]],['سارة البداح','الدور الأول · الدرج الثاني',[1,545,177]],['فوزية عسيري','معمل الحاسب',[1,500,58]],
+   ['منيرة القحطاني · سارة السهلي · رحاب هوساوي','الساحة الخارجية',[0,380,420]]]
+};
+let teamPin=null;
+function renderTeam(){
+  [['lead','team-lead'],['roles','team-roles'],['air','team-air'],['cls','team-cls'],['floors','team-floors']].forEach(([k,id])=>{
+    $(id).innerHTML=TEAM[k].map((r,i)=>`<div data-k="${k}" data-i="${i}"><span class="dot" style="background:var(--staff);margin-top:5px"></span><div><b>${r[0]}</b><small>${r[1]}</small></div></div>`).join('');
+    $(id).querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{const r=TEAM[k][+el.dataset.i];info(r[0],r[1]);if(!r[2])return;
+      const [f,x,y]=r[2];floorView=String(f);['f-all','f-0','f-1'].forEach(b=>$(b).setAttribute('aria-pressed',b==='f-'+f));applyVisibility();
+      if(teamPin)teamPin.parent.remove(teamPin);const d=document.createElement('div');d.className='tag';d.style.fontSize='12px';d.textContent=r[0];
+      teamPin=new THREE.CSS2DObject(d);teamPin.position.copy(P(x,y,f,2.8));scene.add(teamPin);
+      const c=camFor();const shift=P(x,y,f).sub(new THREE.Vector3(c.tgt.x,FY[f],c.tgt.z)).multiplyScalar(0.5);camGoal={tgt:c.tgt.clone().add(shift),pos:c.pos.clone().add(shift).addScaledVector(c.pos.clone().sub(c.tgt),-0.35)};
+      if(innerWidth<760){$('panel').classList.add('min');$('grip').textContent='▴';}});
+  });
+}
+renderTeam();
+
+/* ---------- prefs ---------- */
+function save(){try{localStorage.setItem('ssm2',JSON.stringify({on,floorView}))}catch(e){}}
+try{const s=JSON.parse(localStorage.getItem('ssm2')||'null');if(s){Object.assign(on,s.on||{});if(s.floorView)floorView=s.floorView;}}catch(e){}
+
+/* ---------- theme ---------- */
+function retheme(){scene.background=col('--scene');themed.forEach(([m,t])=>m.color=col(t));}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',retheme);
+new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------- boot ---------- */
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);lr.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener('resize',()=>{resize();setCam();});
+build();retheme();resize();
+document.querySelectorAll('#layers .chip').forEach(c=>c.setAttribute('aria-pressed',on[c.dataset.layer]));
+['f-all','f-0','f-1'].forEach(i=>$(i).setAttribute('aria-pressed',(floorView==='all'?'f-all':'f-'+floorView)===i));
+makeAgents();buildArrows();setCam(true);applyVisibility();tupdate();
+if(innerWidth<760){$('panel').classList.add('min');$('grip').textContent='▴';}
+let last=performance.now(),orbit=0;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function loop(now){requestAnimationFrame(loop);const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(running){simT+=dt*speed;stepSim();
+    if($('follow').checked&&!camGoal&&!reduced){orbit+=dt*0.08;const c=camFor();const r=Math.hypot(c.pos.x-c.tgt.x,c.pos.z-c.tgt.z);
+      camera.position.x=c.tgt.x+Math.sin(orbit-0.14)*r;camera.position.z=c.tgt.z+Math.cos(orbit-0.14)*r;camera.position.y=c.pos.y;controls.target.copy(c.tgt);}}
+  if(!reduced)stepArrows(now/1000);
+  if(fireObj)fireObj.children[0].scale.y=1+Math.sin(now/120)*0.12;
+  if(labFire)labFire.children[0].scale.y=1+Math.sin(now/110)*0.15;
+  stepTrainer(dt,now);
+  moveCam(dt);controls.update();renderer.render(scene,camera);lr.render(scene,camera);})(last);
+})();
+</script>
+</body>
+</html>
