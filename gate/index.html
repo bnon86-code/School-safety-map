@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f9a9a">
+<title>اتصالات البوابة</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: one column of big tap targets, ordered by situation, emergency last */
+:root{
+  --bg:#f2f8f8; --card:#ffffff; --fg:#0f2a2c; --muted:#5a7577;
+  --accent:#0f9a9a; --accent-ink:#ffffff; --accent-soft:#d8efef;
+  --alert:#c43c3c; --alert-soft:#fbe7e7; --line:#d3e4e4;
+  --font:"Tajawal",Tahoma,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1a1b; --card:#132628; --fg:#e6f3f3; --muted:#93b0b2;
+  --accent:#33c2c0; --accent-ink:#06201f; --accent-soft:#163d3e;
+  --alert:#ef6b6b; --alert-soft:#3a1a1a; --line:#21393b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1a1b; --card:#132628; --fg:#e6f3f3; --muted:#93b0b2;
+  --accent:#33c2c0; --accent-ink:#06201f; --accent-soft:#163d3e;
+  --alert:#ef6b6b; --alert-soft:#3a1a1a; --line:#21393b; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.5;direction:rtl}
+.wrap{max-width:520px;margin:0 auto;padding-block:20px 32px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px}
+header h1{margin:0;font-size:1.7rem;font-weight:800;text-wrap:balance}
+header p{margin:2px 0 0;color:var(--muted);font-size:.98rem}
+.sit{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.q{display:flex;align-items:center;gap:10px;font-size:1.2rem;font-weight:700}
+.q .ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.q .ic svg{width:22px;height:22px}
+.call{display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;
+  background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:14px 16px;min-height:64px}
+.call:focus-visible,.copy:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.call .who{font-weight:700;font-size:1.15rem}
+.call .num{font-size:1rem;opacity:.9;direction:ltr;font-variant-numeric:tabular-nums;user-select:all}
+.call .ph{width:30px;height:30px;flex:none}
+.row{display:flex;gap:8px;align-items:stretch}
+.row .call{flex:1;min-width:0}
+.copy{flex:none;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:14px;padding:0 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.or{text-align:center;color:var(--muted);font-size:.9rem}
+.sit.alert{background:var(--alert-soft);border-color:transparent}
+.sit.alert .q .ic{background:var(--alert);color:#fff}
+.sit.alert .call{background:var(--alert);color:#fff}
+.note{color:var(--muted);font-size:.9rem;margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>اتصالات البوابة</h1>
+    <p>الحارس تركي — اختر الموقف واضغط الزر للاتصال</p>
+  </header>
+
+  <section class="sit">
+    <div class="q"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.3 0 4 1.6 4.5 4"/></svg></span>طالبة أو ولي أمر عند البوابة</div>
+    <div class="row">
+      <a class="call" href="tel:+966555802621"><span><div class="who">أ. منيرة القحطاني</div><div class="num">055 580 2621</div></span><svg class="ph" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></a>
+      <button class="copy" data-n="0555802621">نسخ</button>
+    </div>
+  </section>
+
+  <section class="sit">
+    <div class="q"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h5v16h-5"/><path d="M10 16l4-4-4-4"/><path d="M14 12H4"/></svg></span>استئذان طالبة</div>
+    <div class="row">
+      <a class="call" href="tel:+966505950383"><span><div class="who">أ. أمل الزهراني</div><div class="num">050 595 0383</div></span><svg class="ph" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></a>
+      <button class="copy" data-n="0505950383">نسخ</button>
+    </div>
+    <div class="or">أو</div>
+    <div class="row">
+      <a class="call" href="tel:+966507484009"><span><div class="who">أ. حنان العتيبي</div><div class="num">050 748 4009</div></span><svg class="ph" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></a>
+      <button class="copy" data-n="0507484009">نسخ</button>
+    </div>
+  </section>
+
+  <section class="sit">
+    <div class="q"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span>نهاية الدوام والانصراف</div>
+    <div class="row">
+      <a class="call" href="tel:+966540275755"><span><div class="who">أ. نوال الجوهر</div><div class="num">054 027 5755</div></span><svg class="ph" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></a>
+      <button class="copy" data-n="0540275755">نسخ</button>
+    </div>
+  </section>
+
+  <section class="sit alert">
+    <div class="q"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></span>ما أحد رد؟ اتصل بالوكيلة</div>
+    <div class="row">
+      <a class="call" href="tel:+966563638895"><span><div class="who">أ. بنان عسيري — الوكيلة</div><div class="num">056 363 8895</div></span><svg class="ph" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></a>
+      <button class="copy" data-n="0563638895">نسخ</button>
+    </div>
+  </section>
+
+  <p class="note">نصيحة: أضف هذه الصفحة إلى الشاشة الرئيسية في جوالك لتفتحها بسرعة.</p>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function(b){
+  b.addEventListener('click',function(){
+    var n=b.dataset.n, done=function(){b.textContent='تم ✓';setTimeout(function(){b.textContent='نسخ'},1500)};
+    try{navigator.clipboard.writeText(n).then(done,function(){b.textContent=n});}catch(e){b.textContent=n}
+  });
+});
+</script>
+</body>
+</html>
